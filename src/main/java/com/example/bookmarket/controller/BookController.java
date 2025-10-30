@@ -81,8 +81,8 @@ public class BookController {
         // فیلتر بر اساس قیمت
         if (minPrice != null || maxPrice != null) {
             books = books.stream()
-                    .filter(book -> (minPrice == null || book.getPrice().compareTo(minPrice) >= 0) &&
-                            (maxPrice == null || book.getPrice().compareTo(maxPrice) <= 0))
+                    .filter(book -> (minPrice == null || book.getFinalPrice().compareTo(minPrice) >= 0) &&
+                            (maxPrice == null || book.getFinalPrice().compareTo(maxPrice) <= 0))
                     .collect(Collectors.toList());
         }
 
