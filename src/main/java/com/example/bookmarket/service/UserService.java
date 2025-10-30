@@ -73,6 +73,7 @@ public class UserService {
         if (updateUserDto.nickname() != null) {
             userEntity.setNickname(updateUserDto.nickname());
         }
+        userEntity.setStatus(UserEntity.UserStatus.ACTIVE);
 
         userRepository.save(userEntity);
         return true;
