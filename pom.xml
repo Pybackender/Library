@@ -76,32 +76,45 @@
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui -->
 <!--		http://localhost:8081/swagger-ui/index.html-->
-		<dependency>
+		  <dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.8.13</version>
 		</dependency>
-<!--		<dependency>-->
-<!--			<groupId>org.springframework.boot</groupId>-->
-<!--			<artifactId>spring-boot-starter-security</artifactId>-->
-<!--		</dependency>-->
-<!--		<dependency>-->
-<!--			<groupId>io.jsonwebtoken</groupId>-->
-<!--			<artifactId>jjwt-api</artifactId>-->
-<!--			<version>0.11.5</version>-->
-<!--		</dependency>-->
-<!--		<dependency>-->
-<!--			<groupId>io.jsonwebtoken</groupId>-->
-<!--			<artifactId>jjwt-impl</artifactId>-->
-<!--			<version>0.11.5</version>-->
-<!--			<scope>runtime</scope>-->
-<!--		</dependency>-->
-<!--		<dependency>-->
-<!--			<groupId>io.jsonwebtoken</groupId>-->
-<!--			<artifactId>jjwt-jackson</artifactId>-->
-<!--			<version>0.11.5</version>-->
-<!--			<scope>runtime</scope>-->
-<!--		</dependency>-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.11.5</version> <!-- یا آخرین نسخه موجود -->
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.11.5</version> <!-- یا آخرین نسخه موجود -->
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.11.5</version> <!-- یا آخرین نسخه موجود -->
+		</dependency>
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-boot-starter</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.xml.bind</groupId>
+			<artifactId>jakarta.xml.bind-api</artifactId>
+			<version>3.0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-runtime</artifactId>
+			<version>3.0.1</version>
+		</dependency>
 	</dependencies>
 
 	<build>

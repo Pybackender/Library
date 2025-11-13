@@ -6,6 +6,8 @@ import com.example.bookmarket.exception.BookNotFoundException;
 import com.example.bookmarket.exception.CommentNotFoundException;
 import com.example.bookmarket.exception.UserNotFoundException;
 import com.example.bookmarket.service.CommentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,13 +18,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/comments")
+@Tag(name = "مدیریت کامنت ها", description = "")
 public class CommentController {
     private final CommentService commentService;
 
     public CommentController(CommentService commentService) {
         this.commentService = commentService;
     }
-
+    @Operation(summary = "اضافه کردن کامنت ")
     @PostMapping("/add")
     public ResponseEntity<CommentEntity> addComment(@Valid @RequestBody CommentDto commentDto) {
         CommentEntity comment = commentService.addComment(
@@ -30,13 +33,13 @@ public class CommentController {
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(comment);
     }
-
+    @Operation(summary = "پیدا کردن کامنت ")
     @GetMapping("/book/{bookId}")
     public ResponseEntity<List<CommentEntity>> getCommentsByBookId(@PathVariable Long bookId) {
         List<CommentEntity> comments = commentService.getCommentsByBookId(bookId);
         return ResponseEntity.ok(comments);
     }
-
+    @Operation(summary = "پاک کردن کامنت ")
     @DeleteMapping("/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
         commentService.deleteComment(commentId);

@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "User_")
@@ -32,13 +34,10 @@ public class UserEntity {
         INACTIVE
     }
 
-    public UserStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(UserStatus status) {
-        this.status = status;
-    }
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "role")
+    private Set<String> roles = new HashSet<>(); // فیلد نقش‌ها
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "register_date", updatable = false)
@@ -48,6 +47,8 @@ public class UserEntity {
     protected void onCreate() {
         registerDate = new Date();
     }
+
+    // Getters و Setters
 
     public Long getId() {
         return id;
@@ -81,6 +82,14 @@ public class UserEntity {
         this.nickname = nickname;
     }
 
+    public UserStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(UserStatus status) {
+        this.status = status;
+    }
+
     public Date getRegisterDate() {
         return registerDate;
     }
@@ -89,4 +98,11 @@ public class UserEntity {
         this.registerDate = registerDate;
     }
 
+    public Set<String> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<String> roles) {
+        this.roles = roles;
+    }
 }

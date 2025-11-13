@@ -1,21 +1,47 @@
 spring:
   application:
-    name : book_db
+    name: book_db
   datasource:
-    url: jdbc:postgresql://localhost:5432/book_db
-    username: postgres
-    password: hasan82.13
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/book_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+      show-sql: true
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.PostgreSQLDialect
+
 server:
   port: 8081
 
-#jwt:
-#  secret: "mySuperSecretKeyForJWT2024!MakeItLongAndSecure12345"
+jwt:
+  secret: -YKxYIkOqI0g1ThfGoTUUSv8LnWWtzMvMie7DSwzhPc
+
+# تنظیمات کامل Swagger
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    try-it-out-enabled: true
+    filter: true
+    urls:
+      - url: /api-docs
+        name: Book Market API
+  show-actuator: false
+
+# تنظیمات لاگ برای دیباگ
+logging:
+  level:
+    com.example.bookmarket: DEBUG
+    org.springframework.security: WARN
+    org.springdoc: DEBUG

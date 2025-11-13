@@ -67,7 +67,7 @@ public class BookEntity {
         return price; // اگر تخفیف وجود ندارد، قیمت اصلی را برگردانید
     }
 
-    private void updateFinalPrice() {
+    void updateFinalPrice() {
         if (discountPercentage != null && discountPercentage > 0) {
             BigDecimal discountAmount = price.multiply(BigDecimal.valueOf(discountPercentage)).divide(BigDecimal.valueOf(100));
             finalPrice = price.subtract(discountAmount);
