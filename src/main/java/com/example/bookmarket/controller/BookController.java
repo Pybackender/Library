@@ -27,12 +27,14 @@ public class BookController {
     public BookController(BookService bookService) {
         this.bookService = bookService;
     }
+
     @Operation(summary = "اضافه کردن کتاب ")
     @PostMapping("/add")
     public ResponseEntity<Boolean> add(@Valid @RequestBody AddBookDto addBookDto) {
         boolean createdUser = bookService.add(addBookDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
+
     @Operation(summary = "پیدا کردن کتاب با ID ")
     @GetMapping("/{bookId}")
     public ResponseEntity<BookEntity> getBook(@Valid @PathVariable Long bookId) {
@@ -40,24 +42,28 @@ public class BookController {
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new BookNotFoundException(bookId)); // Throw the custom exception
     }
+
     @Operation(summary = "بروزرسانی کردن کتاب ")
     @PutMapping("/update")
     public ResponseEntity<Boolean> update(@Valid @RequestBody UpdateBookDto updateBookDto) {
         boolean updatedBook = bookService.update(updateBookDto);
         return ResponseEntity.ok(updatedBook);
     }
+
     @Operation(summary = "پاک کردن کتاب ")
     @DeleteMapping("/delete/{bookId}")
     public ResponseEntity<Boolean> delete(@Valid @PathVariable Long bookId) {
         boolean deleted = bookService.delete(bookId);
         return ResponseEntity.ok(deleted);
     }
+
     @Operation(summary = "پیدا کردن کتاب ها ")
     @GetMapping("/all")
     public ResponseEntity<List<BookEntity>> getAllBooks() {
         List<BookEntity> books = bookService.findAll();
         return ResponseEntity.ok(books); // Return the list of books with a 200 OK status
     }
+
     @Operation(summary = "پیدا کردن کتاب ها با فیلتر ")
     @GetMapping("/search")
     public ResponseEntity<List<BookEntity>> searchBooks(
@@ -105,6 +111,7 @@ public class BookController {
                 .orElse("Validation error");
         return ResponseEntity.badRequest().body(errorMessage);
     }
+
     @RestControllerAdvice
     public class GlobalExceptionHandler {
         @ExceptionHandler(BookOutOfStockException.class)
