@@ -1,19 +1,22 @@
 package com.example.bookmarket.dto;
 
-public class TokenDto {
-    private String accessToken;
-    private String refreshToken;
-
+public record TokenDto(
+        String accessToken,
+        String refreshToken,
+        String message
+) {
+    // Constructor برای backward compatibility
     public TokenDto(String accessToken, String refreshToken) {
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
+        this(accessToken, refreshToken, null);
     }
 
-    public String getAccessToken() {
-        return accessToken;
+    // Constructor فقط با accessToken و refreshToken (برای لاگین)
+    public static TokenDto of(String accessToken, String refreshToken) {
+        return new TokenDto(accessToken, refreshToken, null);
     }
 
-    public String getRefreshToken() {
-        return refreshToken;
+    // Constructor کامل
+    public static TokenDto of(String accessToken, String refreshToken, String message) {
+        return new TokenDto(accessToken, refreshToken, message);
     }
 }

@@ -159,3 +159,6 @@ public class LoanController {
         return ResponseEntity.badRequest().body(errorMessage);
     }
 }
+
+
+// خروجی کنترولر باید  dto باشه نباید entity  باشه

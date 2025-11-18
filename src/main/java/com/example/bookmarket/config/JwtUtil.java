@@ -8,10 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class JwtUtil {
@@ -19,7 +16,7 @@ public class JwtUtil {
     private final Key secretKey;
 
     private static final long ACCESS_TOKEN_VALIDITY = 1000 * 60 * 15; // 15 دقیقه
-    private static final long REFRESH_TOKEN_VALIDITY = 1000 * 60 * 60 * 24 * 30; // 30 روز
+    private static final long REFRESH_TOKEN_VALIDITY = 1000 * 60 * 15; // 30 روز
 
     public JwtUtil(@Value("${jwt.secret}") String secret) {
         if (secret == null || secret.length() < 32) {
@@ -31,11 +28,14 @@ public class JwtUtil {
     public String generateToken(String username, Set<String> roles) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", roles);
+        claims.put("token_type", "access");
         return createToken(claims, username, ACCESS_TOKEN_VALIDITY);
     }
 
     public String generateRefreshToken(String username) {
-        return createToken(new HashMap<>(), username, REFRESH_TOKEN_VALIDITY);
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("token_type", "refresh");
+        return createToken(claims, username, REFRESH_TOKEN_VALIDITY);
     }
 
     private String createToken(Map<String, Object> claims, String subject, long validity) {
@@ -71,5 +71,32 @@ public class JwtUtil {
 
     private boolean isTokenExpired(String token) {
         return extractAllClaims(token).getExpiration().before(new Date());
+    }
+
+    public Set<String> extractRoles(String token) {
+        Claims claims = extractAllClaims(token);
+        List<String> roles = claims.get("roles", List.class);
+        return roles != null ? new HashSet<>(roles) : new HashSet<>();
+    }
+
+    // در کلاس JwtUtil
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            String tokenType = claims.get("token_type", String.class);
+            return "refresh".equals(tokenType);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isAccessToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            String tokenType = claims.get("token_type", String.class);
+            return "access".equals(tokenType);
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

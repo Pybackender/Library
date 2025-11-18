@@ -8,6 +8,7 @@ import com.example.bookmarket.entity.UserEntity;
 import com.example.bookmarket.exception.UserAlreadyLoggedInException;
 import com.example.bookmarket.exception.UserAlreadyLoggedOutException;
 import com.example.bookmarket.exception.UserNotFoundException;
+import com.example.bookmarket.exception.UsernameAlreadyExistsException;
 import com.example.bookmarket.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,9 +32,9 @@ public class UserService {
     }
 
     @Transactional
-    public boolean add(AddUserDto addUserDto) {
+    public UserEntity add(AddUserDto addUserDto) {
         if (userRepository.existsByUsername(addUserDto.username())) {
-            return false;
+            throw new UsernameAlreadyExistsException(addUserDto.username());
         }
 
         var userEntity = new UserEntity();
@@ -43,7 +44,7 @@ public class UserService {
         userEntity.setStatus(UserEntity.UserStatus.INACTIVE); // وضعیت جدید برای کاربر ثبت نام شده
 
         userRepository.save(userEntity);
-        return true;
+        return userEntity;
     }
 
     public TokenDto login(String username, String password) {
@@ -128,6 +129,7 @@ public class UserService {
         return true; // خروج موفق
     }
 
+    // در UserService - دیباگ اضافه کنید
     public Set<String> getUserRoles(String username) {
         UserEntity user = userRepository.findByUsername(username);
         if (user != null) {

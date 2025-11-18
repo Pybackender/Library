@@ -39,6 +39,10 @@ public class UserEntity {
     @Column(name = "role")
     private Set<String> roles = new HashSet<>(); // فیلد نقش‌ها
 
+    public UserEntity() {
+        this.roles.add("USER"); // به طور خودکار نقش ADMIN اضافه شود
+    }
+
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "register_date", updatable = false)
     private Date registerDate;
