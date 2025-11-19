@@ -1,9 +1,9 @@
 package com.example.bookmarket.entity;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "loan")
@@ -23,16 +23,14 @@ public class LoanEntity {
     @Column(nullable = false)
     private BigDecimal price;
 
-    @Column(nullable = false,name = "final_price")
+    @Column(nullable = false, name = "final_price")
     private BigDecimal finalPrice;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "loan_date", nullable = false)
-    private Date loanDate;
+    private LocalDateTime loanDate;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "due_date", nullable = false)
-    private Date dueDate;
+    private LocalDate dueDate;
 
     public enum LoanStatus {
         ACTIVE,
@@ -41,19 +39,11 @@ public class LoanEntity {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private LoanStatus status = LoanStatus.ACTIVE; // تنظیم وضعیت اولیه
-
-    public LoanStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(LoanStatus status) {
-        this.status = status;
-    }
+    private LoanStatus status = LoanStatus.ACTIVE;
 
     @PrePersist
     protected void onCreate() {
-        loanDate = new Date();
+        loanDate = LocalDateTime.now(); // اصلاح شده
     }
 
     // Default constructor
@@ -85,21 +75,22 @@ public class LoanEntity {
         this.book = book;
     }
 
-    public Date getLoanDate() {
+    public LocalDateTime getLoanDate() { // اصلاح شده
         return loanDate;
     }
 
-    public void setLoanDate(Date loanDate) {
+    public void setLoanDate(LocalDateTime loanDate) { // اصلاح شده
         this.loanDate = loanDate;
     }
 
-    public Date getDueDate() {
+    public LocalDate getDueDate() {
         return dueDate;
     }
 
-    public void setDueDate(Date dueDate) {
+    public void setDueDate(LocalDate dueDate) {
         this.dueDate = dueDate;
     }
+
     public BigDecimal getPrice() {
         return price;
     }
@@ -114,5 +105,13 @@ public class LoanEntity {
 
     public void setFinalPrice(BigDecimal finalPrice) {
         this.finalPrice = finalPrice;
+    }
+
+    public LoanStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(LoanStatus status) {
+        this.status = status;
     }
 }

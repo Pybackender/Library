@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -28,45 +29,36 @@ public class LibrarianService {
     }
 
     @Transactional
-    public boolean add(AddLibrarianDto addLibrarianDto) {
+    public AddLibrarianDto add(AddLibrarianDto addLibrarianDto) {
         if (librarianRepository.existsByUsername(addLibrarianDto.username())) {
-            return false;
+            throw new RuntimeException("Librarian with username '" + addLibrarianDto.username() + "' already exists");
         }
 
         var librarianEntity = new LibrarianEntity();
         librarianEntity.setUsername(addLibrarianDto.username());
         librarianEntity.setPassword(passwordEncoder.encode(addLibrarianDto.password()));
-        // status به طور خودکار INACTIVE تنظیم می‌شود
-        // roles به طور خودکار ADMIN تنظیم می‌شود
 
-        librarianRepository.save(librarianEntity);
-        return true;
+        LibrarianEntity savedLibrarian = librarianRepository.save(librarianEntity);
+        return convertToAddLibrarianDto(savedLibrarian);
     }
 
     public TokenDto login(String username, String password) {
-        LibrarianEntity librarian = librarianRepository.findByUsername(username);
-        if (librarian == null) {
-            throw new UserNotFoundException(username);
-        }
+        LibrarianEntity librarian = librarianRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException(username));
 
-        // بررسی وضعیت کتابدار - اگر null باشد یا INACTIVE باشد، اجازه login بده
         if (librarian.getStatus() == LibrarianEntity.LibrarianStatus.ACTIVE) {
             throw new UserAlreadyLoggedInException(username);
         }
 
-        // مقایسه رمز عبور
         if (!passwordEncoder.matches(password, librarian.getPassword())) {
             throw new IllegalArgumentException("Incorrect password");
         }
 
-        // تغییر وضعیت به ACTIVE
         librarian.setStatus(LibrarianEntity.LibrarianStatus.ACTIVE);
         librarianRepository.save(librarian);
 
-        // تخصیص نقش ADMIN به کتابدار
         Set<String> roles = Collections.singleton("ADMIN");
 
-        // تولید توکن
         String accessToken = jwtUtil.generateToken(username, roles);
         String refreshToken = jwtUtil.generateRefreshToken(username);
 
@@ -74,24 +66,20 @@ public class LibrarianService {
     }
 
     @Transactional
-    public boolean logout(Long id) {
+    public void logout(Long id) {
         LibrarianEntity librarianEntity = librarianRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
-        // بررسی اینکه آیا کتابدار قبلاً غیرفعال شده است
         if (librarianEntity.getStatus() == LibrarianEntity.LibrarianStatus.INACTIVE) {
             throw new UserAlreadyLoggedOutException(librarianEntity.getUsername());
         }
 
-        // تغییر وضعیت کتابدار به INACTIVE
         librarianEntity.setStatus(LibrarianEntity.LibrarianStatus.INACTIVE);
         librarianRepository.save(librarianEntity);
-
-        return true;
     }
 
     @Transactional
-    public boolean update(UpdateLibrarianDto updateLibrarianDto) {
+    public UpdateLibrarianDto update(UpdateLibrarianDto updateLibrarianDto) {
         LibrarianEntity librarianEntity = librarianRepository.findById(updateLibrarianDto.id())
                 .orElseThrow(() -> new UserNotFoundException(updateLibrarianDto.id()));
 
@@ -102,24 +90,44 @@ public class LibrarianService {
             librarianEntity.setPassword(passwordEncoder.encode(updateLibrarianDto.password()));
         }
 
-        librarianRepository.save(librarianEntity);
-        return true;
+        LibrarianEntity updatedLibrarian = librarianRepository.save(librarianEntity);
+        return convertToUpdateLibrarianDto(updatedLibrarian);
     }
 
     @Transactional
-    public boolean delete(Long id) {
+    public void delete(Long id) {
         if (!librarianRepository.existsById(id)) {
             throw new UserNotFoundException(id);
         }
         librarianRepository.deleteById(id);
-        return true;
     }
 
     public Set<String> getLibrarianRoles(String username) {
-        LibrarianEntity librarian = librarianRepository.findByUsername(username);
-        if (librarian != null) {
-            return Collections.singleton("ADMIN"); // همیشه نقش ADMIN برگردانید
+        Optional<LibrarianEntity> librarian = librarianRepository.findByUsername(username);
+        if (librarian.isPresent()) {
+            return Collections.singleton("ADMIN");
         }
         return Collections.emptySet();
+    }
+
+    // متدهای تبدیل Entity به DTO
+    private AddLibrarianDto convertToAddLibrarianDto(LibrarianEntity librarian) {
+        return new AddLibrarianDto(
+                librarian.getUsername(),
+                "" // پسورد رو برنمی‌گردونیم برای امنیت
+        );
+    }
+
+    private UpdateLibrarianDto convertToUpdateLibrarianDto(LibrarianEntity librarian) {
+        return new UpdateLibrarianDto(
+                librarian.getId(),
+                librarian.getUsername(),
+                "" // پسورد رو برنمی‌گردونیم برای امنیت
+        );
+    }
+
+    public LibrarianEntity findByUsername(String username) {
+        return librarianRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException(username));
     }
 }

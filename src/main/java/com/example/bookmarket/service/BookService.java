@@ -8,8 +8,10 @@ import com.example.bookmarket.repository.BookRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class BookService {
@@ -20,9 +22,9 @@ public class BookService {
     }
 
     @Transactional
-    public boolean add(AddBookDto addBookDto) {
+    public AddBookDto add(AddBookDto addBookDto) {
         if (bookRepository.existsByTitle(addBookDto.title())) {
-            return false; // Book already exists
+            throw new RuntimeException("Book with title '" + addBookDto.title() + "' already exists");
         }
 
         var bookEntity = new BookEntity();
@@ -30,63 +32,124 @@ public class BookService {
         bookEntity.setAuthor(addBookDto.author());
         bookEntity.setPrice(addBookDto.price());
         bookEntity.setNumberOfBooks(addBookDto.numberOfBooks());
+        bookEntity.setPublishDate(addBookDto.publishedDate());
         bookEntity.setGenre(addBookDto.genre());
         bookEntity.setVolume(addBookDto.volume());
         bookEntity.setDiscountPercentage(addBookDto.discountPercentage());
 
-        bookRepository.save(bookEntity); // Save the book
-        return true; // Return true on successful save
+        BookEntity savedBook = bookRepository.save(bookEntity);
+        return convertToAddBookDto(savedBook);
     }
-    @Transactional
-    public Optional<BookEntity> findById(Long bookId) {
-        return bookRepository.findById(bookId); // Return an Optional containing the book if found
+
+    @Transactional(readOnly = true)
+    public Optional<UpdateBookDto> findById(Long bookId) {
+        return bookRepository.findById(bookId)
+                .map(this::convertToUpdateBookDto);
     }
 
     @Transactional
-    public boolean update(UpdateBookDto updateBookDto) {
-        // Fetch the book by ID
+    public UpdateBookDto update(UpdateBookDto updateBookDto) {
         BookEntity bookEntity = bookRepository.findById(updateBookDto.id())
                 .orElseThrow(() -> new BookNotFoundException(updateBookDto.id()));
 
-        // Update the fields of the book entity
         bookEntity.setTitle(updateBookDto.title());
         bookEntity.setAuthor(updateBookDto.author());
-        bookEntity.setPrice(updateBookDto.price());  // Use accessor method
-        bookEntity.setNumberOfBooks(updateBookDto.numberOfBooks()); // Use accessor method
+        bookEntity.setPrice(updateBookDto.price());
+        bookEntity.setNumberOfBooks(updateBookDto.numberOfBooks());
+        bookEntity.setPublishDate(updateBookDto.publishedDate());
         bookEntity.setGenre(updateBookDto.genre());
         bookEntity.setVolume(updateBookDto.volume());
         bookEntity.setDiscountPercentage(updateBookDto.discountPercentage());
 
-        // Save the updated book entity
-        bookRepository.save(bookEntity);
-        return true;
+        BookEntity updatedBook = bookRepository.save(bookEntity);
+        return convertToUpdateBookDto(updatedBook);
     }
 
     @Transactional
-    public boolean delete(Long bookId) {
-        if (bookRepository.existsById(bookId)) {
-            bookRepository.deleteById(bookId);
-            return true;
-        } else {
+    public void delete(Long bookId) {
+        if (!bookRepository.existsById(bookId)) {
             throw new BookNotFoundException(bookId);
         }
+        bookRepository.deleteById(bookId);
     }
 
     @Transactional(readOnly = true)
-    public List<BookEntity> findAll() {
-        return bookRepository.findAll(); // Fetch all books from the repository
+    public List<UpdateBookDto> findAll() {
+        return bookRepository.findAll().stream()
+                .map(this::convertToUpdateBookDto)
+                .collect(Collectors.toList());
     }
 
-    public List<BookEntity> searchByTitle(String title) {
-        return bookRepository.findByTitleContainingIgnoreCase(title);
+    public List<UpdateBookDto> searchBooks(String title, String author, String genre,
+                                           BigDecimal minPrice, BigDecimal maxPrice) {
+        List<BookEntity> books;
+
+        if (title != null) {
+            books = bookRepository.findByTitleContainingIgnoreCase(title);
+        } else if (author != null) {
+            books = bookRepository.findByAuthorContainingIgnoreCase(author);
+        } else if (genre != null) {
+            books = bookRepository.findByGenre(genre);
+        } else {
+            books = bookRepository.findAll();
+        }
+
+        if (minPrice != null || maxPrice != null) {
+            books = books.stream()
+                    .filter(book -> (minPrice == null || book.getFinalPrice().compareTo(minPrice) >= 0) &&
+                            (maxPrice == null || book.getFinalPrice().compareTo(maxPrice) <= 0))
+                    .collect(Collectors.toList());
+        }
+
+        return books.stream()
+                .map(this::convertToUpdateBookDto)
+                .collect(Collectors.toList());
     }
 
-    public List<BookEntity> searchByAuthor(String author) {
-        return bookRepository.findByAuthorContainingIgnoreCase(author);
+    // متدهای کمکی برای تبدیل Entity به DTO
+    private AddBookDto convertToAddBookDto(BookEntity book) {
+        return new AddBookDto(
+                book.getTitle(),
+                book.getAuthor(),
+                book.getPrice(),
+                book.getNumberOfBooks(),
+                book.getPublishDate(),
+                book.getGenre(),
+                book.getVolume(),
+                book.getDiscountPercentage()
+        );
     }
 
-    public List<BookEntity> searchByGenre(String genre) {
-        return bookRepository.findByGenre(genre);
+    private UpdateBookDto convertToUpdateBookDto(BookEntity book) {
+        return new UpdateBookDto(
+                book.getId(),
+                book.getTitle(),
+                book.getAuthor(),
+                book.getPrice(),
+                book.getNumberOfBooks(),
+                book.getPublishDate(),
+                book.getGenre(),
+                book.getVolume(),
+                book.getDiscountPercentage()
+        );
     }
 
+    // متدهای جستجوی قدیمی (اگر لازم هست)
+    public List<UpdateBookDto> searchByTitle(String title) {
+        return bookRepository.findByTitleContainingIgnoreCase(title).stream()
+                .map(this::convertToUpdateBookDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<UpdateBookDto> searchByAuthor(String author) {
+        return bookRepository.findByAuthorContainingIgnoreCase(author).stream()
+                .map(this::convertToUpdateBookDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<UpdateBookDto> searchByGenre(String genre) {
+        return bookRepository.findByGenre(genre).stream()
+                .map(this::convertToUpdateBookDto)
+                .collect(Collectors.toList());
+    }
 }

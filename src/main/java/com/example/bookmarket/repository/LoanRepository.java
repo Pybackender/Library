@@ -5,6 +5,7 @@ import com.example.bookmarket.entity.LoanEntity;
 import com.example.bookmarket.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
@@ -13,6 +14,7 @@ public interface LoanRepository extends JpaRepository<LoanEntity, Long> {
     List<LoanEntity> findByStatus(LoanEntity.LoanStatus status);
     long countByStatus(LoanEntity.LoanStatus status);
     long countByUserAndStatus(UserEntity user, LoanEntity.LoanStatus status);
+    List<LoanEntity> findByDueDateBeforeAndStatus(LocalDate dueDate, LoanEntity.LoanStatus status);
 
 
 }

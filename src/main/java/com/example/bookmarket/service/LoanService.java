@@ -1,5 +1,7 @@
 package com.example.bookmarket.service;
 
+import com.example.bookmarket.dto.LoanDto;
+import com.example.bookmarket.dto.UpdateLoanDto;
 import com.example.bookmarket.entity.BookEntity;
 import com.example.bookmarket.entity.LoanEntity;
 import com.example.bookmarket.entity.UserEntity;
@@ -11,9 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class LoanService {
@@ -33,91 +37,91 @@ public class LoanService {
     }
 
     @Transactional
-    public LoanEntity createLoan(Long userId, Long bookId, Date dueDate) {
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+    public LoanDto createLoan(LoanDto loanDto) {
+        UserEntity user = userRepository.findById(loanDto.userId())
+                .orElseThrow(() -> new UserNotFoundException(loanDto.userId()));
 
-        // بررسی وضعیت کاربر
         if (user.getStatus() == UserEntity.UserStatus.INACTIVE) {
-            throw new UserInactiveException(userId); // پرتاب استثنا در صورت غیرفعالی کاربر
+            throw new UserInactiveException(loanDto.userId());
         }
 
-        BookEntity book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new BookNotFoundException(bookId));
+        BookEntity book = bookRepository.findById(loanDto.bookId())
+                .orElseThrow(() -> new BookNotFoundException(loanDto.bookId()));
 
-        // بررسی تعداد وام‌های فعال
-        long activeLoansCount = countActiveLoansByUserId(userId);
+        long activeLoansCount = countActiveLoansByUserId(loanDto.userId());
         if (activeLoansCount >= 5) {
-            throw new LimitExceededException(userId); // استثنای سفارشی ایجاد کنید
+            throw new LimitExceededException(loanDto.userId());
         }
 
         Integer stock = book.getNumberOfBooks();
         if (stock == null || stock <= 0) {
-            throw new BookOutOfStockException(bookId);
+            throw new BookOutOfStockException(loanDto.bookId());
         }
 
-        // کاهش stock کتاب
         book.setNumberOfBooks(stock - 1);
         bookRepository.save(book);
 
-        // ایجاد loan
         LoanEntity loan = new LoanEntity();
         loan.setUser(user);
         loan.setBook(book);
         loan.setPrice(book.getPrice());
         loan.setFinalPrice(book.getFinalPrice());
-        loan.setLoanDate(new Date());
-        loan.setDueDate(dueDate);
+        loan.setLoanDate(LocalDateTime.now());
+        loan.setDueDate(loanDto.dueDate());
 
-        return loanRepository.save(loan);
+        LoanEntity savedLoan = loanRepository.save(loan);
+        return convertToLoanDto(savedLoan);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<UpdateLoanDto> findById(Long loanId) {
+        return loanRepository.findById(loanId)
+                .map(this::convertToUpdateLoanDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UpdateLoanDto> getAllLoans() {
+        return loanRepository.findAll().stream()
+                .map(this::convertToUpdateLoanDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public Optional<LoanEntity> findById(Long loanId) {
-        return loanRepository.findById(loanId);
-    }
+    public UpdateLoanDto updateLoan(UpdateLoanDto updateLoanDto) {
+        LoanEntity loan = loanRepository.findById(updateLoanDto.id())
+                .orElseThrow(() -> new LoanNotFoundException(updateLoanDto.id()));
 
-    public List<LoanEntity> getAllLoans() {
-        return loanRepository.findAll();
-    }
+        UserEntity user = userRepository.findById(updateLoanDto.userId())
+                .orElseThrow(() -> new UserNotFoundException(updateLoanDto.userId()));
 
-    public LoanEntity updateLoan(Long id, Long userId, Long bookId, Date dueDate) {
-        LoanEntity loan = loanRepository.findById(id)
-                .orElseThrow(() -> new LoanNotFoundException(id));
-
-        // بررسی وضعیت کاربر
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
-        // بررسی وضعیت کاربر
         if (user.getStatus() == UserEntity.UserStatus.INACTIVE) {
-            throw new UserInactiveException(userId); // پرتاب استثنا در صورت غیرفعالی کاربر
+            throw new UserInactiveException(updateLoanDto.userId());
         }
 
-        // بررسی تعداد وام‌های فعال
-        long activeLoansCount = countActiveLoansByUserId(userId);
+        long activeLoansCount = countActiveLoansByUserId(updateLoanDto.userId());
         if (activeLoansCount >= 5) {
-            throw new LimitExceededException(userId); // استثنای سفارشی ایجاد کنید
+            throw new LimitExceededException(updateLoanDto.userId());
         }
 
-        BookEntity book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new BookNotFoundException(bookId));
+        BookEntity book = bookRepository.findById(updateLoanDto.bookId())
+                .orElseThrow(() -> new BookNotFoundException(updateLoanDto.bookId()));
 
         loan.setUser(user);
         loan.setBook(book);
-        loan.setDueDate(dueDate);
+        loan.setDueDate(updateLoanDto.dueDate());
         loan.setPrice(book.getPrice());
         loan.setFinalPrice(book.getFinalPrice());
 
-        return loanRepository.save(loan);
+        LoanEntity updatedLoan = loanRepository.save(loan);
+        return convertToUpdateLoanDto(updatedLoan);
     }
 
+    @Transactional
     public void deleteLoan(Long id) {
         LoanEntity loan = loanRepository.findById(id)
-                .orElseThrow(() -> new LoanNotFoundException(id)); // اگر وام وجود نداشته باشد، استثنا پرتاب می‌شود
+                .orElseThrow(() -> new LoanNotFoundException(id));
 
         if (loan.getStatus() == LoanEntity.LoanStatus.ACTIVE) {
-            // اگر وام فعال است، کتاب را به موجودی اضافه کنید
             BookEntity book = loan.getBook();
             Integer currentStock = book.getNumberOfBooks();
             book.setNumberOfBooks(currentStock + 1);
@@ -127,16 +131,22 @@ public class LoanService {
         loanRepository.deleteById(id);
     }
 
-    public List<LoanEntity> getLoansByUserId(Long userId) {
+    @Transactional(readOnly = true)
+    public List<UpdateLoanDto> getLoansByUserId(Long userId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        return loanRepository.findByUser(user);
+        return loanRepository.findByUser(user).stream()
+                .map(this::convertToUpdateLoanDto)
+                .collect(Collectors.toList());
     }
 
-    public List<LoanEntity> getLoansByBookId(Long bookId) {
+    @Transactional(readOnly = true)
+    public List<UpdateLoanDto> getLoansByBookId(Long bookId) {
         BookEntity book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new BookNotFoundException(bookId));
-        return loanRepository.findByBook(book);
+        return loanRepository.findByBook(book).stream()
+                .map(this::convertToUpdateLoanDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -145,7 +155,7 @@ public class LoanService {
                 .orElseThrow(() -> new LoanNotFoundException(loanId));
 
         if (loan.getStatus() == LoanEntity.LoanStatus.RETURNED) {
-            throw new BookAlreadyReturnedException(); // می‌توانید استثنا بسازید
+            throw new BookAlreadyReturnedException();
         }
 
         BookEntity book = loan.getBook();
@@ -153,7 +163,7 @@ public class LoanService {
         book.setNumberOfBooks(currentStock + 1);
         bookRepository.save(book);
 
-        loan.setStatus(LoanEntity.LoanStatus.RETURNED); // به روز کردن وضعیت به RETURNED
+        loan.setStatus(LoanEntity.LoanStatus.RETURNED);
         loanRepository.save(loan);
     }
 
@@ -173,13 +183,33 @@ public class LoanService {
         return countActiveLoans() + countReturnedLoans();
     }
 
-    public List<LoanEntity> getLoansByStatus(LoanEntity.LoanStatus status) {
-        return loanRepository.findByStatus(status);
+    public List<UpdateLoanDto> getLoansByStatus(LoanEntity.LoanStatus status) {
+        return loanRepository.findByStatus(status).stream()
+                .map(this::convertToUpdateLoanDto)
+                .collect(Collectors.toList());
     }
 
     public long countActiveLoansByUserId(Long userId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         return loanRepository.countByUserAndStatus(user, LoanEntity.LoanStatus.ACTIVE);
+    }
+
+    // متدهای تبدیل Entity به DTO
+    private LoanDto convertToLoanDto(LoanEntity loan) {
+        return new LoanDto(
+                loan.getUser().getId(),
+                loan.getBook().getId(),
+                loan.getDueDate()
+        );
+    }
+
+    private UpdateLoanDto convertToUpdateLoanDto(LoanEntity loan) {
+        return new UpdateLoanDto(
+                loan.getId(),
+                loan.getUser().getId(),
+                loan.getBook().getId(),
+                loan.getDueDate()
+        );
     }
 }

@@ -1,5 +1,6 @@
 package com.example.bookmarket.service;
 
+import com.example.bookmarket.dto.CommentDto;
 import com.example.bookmarket.entity.CommentEntity;
 import com.example.bookmarket.entity.UserEntity;
 import com.example.bookmarket.entity.BookEntity;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CommentService {
@@ -27,32 +29,44 @@ public class CommentService {
     private BookRepository bookRepository;
 
     @Transactional
-    public CommentEntity addComment(Long userId, Long bookId, String content, int rating) {
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+    public CommentDto addComment(CommentDto commentDto) {
+        UserEntity user = userRepository.findById(commentDto.userId())
+                .orElseThrow(() -> new UserNotFoundException(commentDto.userId()));
 
-        BookEntity book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new BookNotFoundException(bookId));
+        BookEntity book = bookRepository.findById(commentDto.bookId())
+                .orElseThrow(() -> new BookNotFoundException(commentDto.bookId()));
 
         CommentEntity comment = new CommentEntity();
         comment.setUser(user);
         comment.setBook(book);
-        comment.setContent(content);
-        comment.setRating(rating);
+        comment.setContent(commentDto.content());
+        comment.setRating(commentDto.rating());
 
-        return commentRepository.save(comment);
+        CommentEntity savedComment = commentRepository.save(comment);
+        return convertToDto(savedComment);
     }
 
-    public List<CommentEntity> getCommentsByBookId(Long bookId) {
-        return commentRepository.findByBookId(bookId);
+    public List<CommentDto> getCommentsByBookId(Long bookId) {
+        return commentRepository.findByBookId(bookId).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional
     public void deleteComment(Long commentId) {
         if (!commentRepository.existsById(commentId)) {
-            throw new CommentNotFoundException(commentId); // ایجاد استثنا در صورت عدم وجود نظر
+            throw new CommentNotFoundException(commentId);
         }
         commentRepository.deleteById(commentId);
     }
 
+    // متد تبدیل Entity به DTO
+    private CommentDto convertToDto(CommentEntity comment) {
+        return new CommentDto(
+                comment.getUser().getId(),
+                comment.getBook().getId(),
+                comment.getContent(),
+                comment.getRating()
+        );
+    }
 }

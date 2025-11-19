@@ -1,11 +1,11 @@
 package com.example.bookmarket.dto;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public record UpdateLoanDto(
         Long id,
         Long userId,
         Long bookId,
-        Date dueDate
+        LocalDate dueDate
 ) {
 }

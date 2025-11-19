@@ -18,6 +18,7 @@ public class StatisticsController {
     public StatisticsController(StatisticsService statisticsService) {
         this.statisticsService = statisticsService;
     }
+
     @Operation(summary = "پیدا کردن وضعیت ")
     @GetMapping
     public ResponseEntity<StatisticsDto> getStatistics() {

@@ -1,11 +1,15 @@
 package com.example.bookmarket.dto;
 
-import jakarta.validation.constraints.NotBlank;
-
-import java.util.Date;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 
 public record LoanDto(
-        @NotBlank(message = "id can not blank") Long userId,
-        @NotBlank(message = "id can not blank") Long bookId,
-        Date dueDate
+        @NotNull(message = "User ID is required")
+        Long userId,
+
+        @NotNull(message = "Book ID is required")
+        Long bookId,
+
+        @NotNull(message = "Due date is required")
+        LocalDate dueDate
 ) {}

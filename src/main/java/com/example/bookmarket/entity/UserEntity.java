@@ -40,7 +40,7 @@ public class UserEntity {
     private Set<String> roles = new HashSet<>(); // فیلد نقش‌ها
 
     public UserEntity() {
-        this.roles.add("USER"); // به طور خودکار نقش ADMIN اضافه شود
+        this.roles.add("USER"); // به طور خودکار نقش USER اضافه شود
     }
 
     @Temporal(TemporalType.TIMESTAMP)
