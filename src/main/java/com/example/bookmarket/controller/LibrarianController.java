@@ -62,23 +62,8 @@ public class LibrarianController {
 
     @Operation(summary = "گرفتن توکن جدید")
     @PostMapping("/refresh-token")
-    public ResponseEntity<TokenDto> refreshToken(@RequestBody RefreshTokenRequest request) {
-        String refreshToken = request.getRefreshToken();
-        try {
-            String username = jwtUtil.extractUsername(refreshToken);
-            if (!jwtUtil.validateToken(refreshToken, username)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new TokenDto(null, "Refresh token is invalid or expired"));
-            }
-            String newAccessToken = jwtUtil.generateToken(username, librarianService.getLibrarianRoles(username));
-            TokenDto tokenDto = new TokenDto(newAccessToken, refreshToken);
-            return ResponseEntity.ok(tokenDto);
-        } catch (io.jsonwebtoken.ExpiredJwtException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new TokenDto(null, "Refresh token is expired"));
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new TokenDto(null, "Refresh token is invalid"));
-        }
+    public ResponseEntity<TokenDto> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        TokenDto tokenDto = librarianService.refreshToken(request.getRefreshToken());
+        return ResponseEntity.ok(tokenDto);
     }
 }

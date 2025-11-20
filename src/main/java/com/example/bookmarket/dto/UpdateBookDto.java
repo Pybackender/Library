@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDate;
 
 public record UpdateBookDto(
         @NotNull(message = "ID is mandatory") Long id,
@@ -14,7 +14,7 @@ public record UpdateBookDto(
         @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than zero")
         @NotNull(message = "Price can not be null") BigDecimal price,
         Integer numberOfBooks,
-        Date publishedDate,
+        LocalDate publishedDate,
         @NotBlank(message = "Genre is mandatory") String genre,
         Integer volume,
         Integer discountPercentage

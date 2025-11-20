@@ -64,35 +64,8 @@ public class UserController {
 
     @Operation(summary = "گرفتن توکن جدید")
     @PostMapping("/refresh-token")
-    public ResponseEntity<TokenDto> refreshToken(@RequestBody RefreshTokenRequest request) {
-        String refreshToken = request.getRefreshToken();
-
-        try {
-            String username = jwtUtil.extractUsername(refreshToken);
-
-            if (!jwtUtil.isRefreshToken(refreshToken)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new TokenDto(null, null, "Invalid token type. Refresh token required."));
-            }
-
-            if (!jwtUtil.validateToken(refreshToken, username)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new TokenDto(null, null, "Refresh token is invalid or expired"));
-            }
-
-            String newAccessToken = jwtUtil.generateToken(username, userService.getUserRoles(username));
-            logger.info("Roles for user {}: {}", username, userService.getUserRoles(username));
-
-            TokenDto tokenDto = new TokenDto(newAccessToken, refreshToken, "Access token refreshed successfully");
-            return ResponseEntity.ok(tokenDto);
-
-        } catch (io.jsonwebtoken.ExpiredJwtException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new TokenDto(null, null, "Refresh token is expired"));
-        } catch (Exception ex) {
-            logger.error("Error refreshing token: {}", ex.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new TokenDto(null, null, "Refresh token is invalid"));
-        }
+    public ResponseEntity<TokenDto> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        TokenDto tokenDto = userService.refreshToken(request.getRefreshToken());
+        return ResponseEntity.ok(tokenDto);
     }
 }

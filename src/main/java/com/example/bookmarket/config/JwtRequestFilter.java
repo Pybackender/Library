@@ -2,8 +2,7 @@ package com.example.bookmarket.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,10 +21,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtRequestFilter.class);
 
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
@@ -42,7 +41,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         String requestURI = request.getRequestURI();
 
-        // اگر درخواست برای endpointهای عمومی است، فیلتر را رد کن
         if (isPublicEndpoint(requestURI)) {
             chain.doFilter(request, response);
             return;
@@ -52,29 +50,26 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String username = null;
         String jwtToken = null;
 
-        // استخراج توکن از هدر
         if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
             jwtToken = requestTokenHeader.substring(7);
             try {
                 username = jwtUtil.extractUsername(jwtToken);
             } catch (ExpiredJwtException e) {
-                logger.warn("JWT Token has expired");
+                log.warn("JWT Token has expired");
                 sendErrorResponse(response, "JWT Token has expired", HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             } catch (Exception e) {
-                logger.warn("Invalid JWT token");
+                log.warn("Invalid JWT token");
                 sendErrorResponse(response, "Invalid JWT token", HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
         }
 
-        // اگر endpoint نیاز به احراز هویت دارد و توکن ارائه نشده
         if (requiresAuthentication(requestURI) && username == null) {
             sendErrorResponse(response, "JWT token is required", HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
-        // اعتبارسنجی توکن
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
@@ -92,11 +87,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                                 new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
 
                         SecurityContextHolder.getContext().setAuthentication(authToken);
-                        logger.debug("Authenticated user: {} with roles: {}", username, roles);
+                        log.debug("Authenticated user: {} with roles: {}", username, roles);
                     }
                 }
             } catch (Exception e) {
-                logger.error("Cannot set user authentication: {}", e.getMessage());
+                log.error("Cannot set user authentication: {}", e.getMessage());
                 sendErrorResponse(response, "Authentication failed", HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }

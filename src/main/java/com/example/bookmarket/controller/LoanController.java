@@ -2,21 +2,17 @@ package com.example.bookmarket.controller;
 
 import com.example.bookmarket.dto.LoanDto;
 import com.example.bookmarket.dto.UpdateLoanDto;
-import com.example.bookmarket.entity.BookEntity;
-import com.example.bookmarket.entity.LoanEntity;
-import com.example.bookmarket.entity.UserEntity;
-import com.example.bookmarket.exception.*;
+import com.example.bookmarket.enums.LoanStatus;
+import com.example.bookmarket.exception.LoanNotFoundException;
 import com.example.bookmarket.service.LoanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.example.bookmarket.repository.UserRepository;
-import com.example.bookmarket.repository.BookRepository;
-import com.example.bookmarket.repository.LoanRepository;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,34 +20,27 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/loans")
 @Tag(name = "مدیریت امانت ها", description = "")
+@RequiredArgsConstructor
 public class LoanController {
-    @Autowired
-    private LoanService loanService;
-    @Autowired
-    private UserRepository userRepository;
 
-    @Autowired
-    private BookRepository bookRepository;
-
-    @Autowired
-    private LoanRepository loanRepository;
+    private final LoanService loanService;
 
     @Operation(summary = "امانت گرفتن کتاب")
     @PostMapping("/add")
-    public ResponseEntity<LoanDto> createLoan(@RequestBody LoanDto loanDto) {
+    public ResponseEntity<LoanDto> createLoan(@Valid @RequestBody LoanDto loanDto) {
         LoanDto loan = loanService.createLoan(loanDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(loan);
     }
 
     @Operation(summary = "پیدا کردن امانتی")
     @GetMapping("/{loanId}")
-    public ResponseEntity<UpdateLoanDto> getLoan(@Valid @PathVariable Long loanId) {
+    public ResponseEntity<UpdateLoanDto> getLoan(@PathVariable Long loanId) {
         UpdateLoanDto loan = loanService.findById(loanId)
                 .orElseThrow(() -> new LoanNotFoundException(loanId));
         return ResponseEntity.ok(loan);
     }
 
-    @Operation(summary = "پیدا کردن امانتی ها")
+    @Operation(summary = "مشاهده همه ی امانتی ها")
     @GetMapping("/all")
     public ResponseEntity<List<UpdateLoanDto>> getAllLoans() {
         List<UpdateLoanDto> loans = loanService.getAllLoans();
@@ -60,7 +49,7 @@ public class LoanController {
 
     @Operation(summary = "بروزرسانی کردن امانت")
     @PutMapping("/update")
-    public ResponseEntity<UpdateLoanDto> updateLoan(@RequestBody UpdateLoanDto updateLoanDto) {
+    public ResponseEntity<UpdateLoanDto> updateLoan(@Valid @RequestBody UpdateLoanDto updateLoanDto) {
         UpdateLoanDto updatedLoan = loanService.updateLoan(updateLoanDto);
         return ResponseEntity.ok(updatedLoan);
     }
@@ -95,24 +84,9 @@ public class LoanController {
     public ResponseEntity<List<UpdateLoanDto>> searchLoans(
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Long bookId,
-            @RequestParam(required = false) LoanEntity.LoanStatus status) {
+            @RequestParam(required = false) LoanStatus status) {
 
-        List<UpdateLoanDto> loans;
-
-        if (userId != null) {
-            UserEntity user = userRepository.findById(userId)
-                    .orElseThrow(() -> new UserNotFoundException(userId));
-            loans = loanService.getLoansByUserId(userId);
-        } else if (bookId != null) {
-            BookEntity book = bookRepository.findById(bookId)
-                    .orElseThrow(() -> new BookNotFoundException(bookId));
-            loans = loanService.getLoansByBookId(bookId);
-        } else if (status != null) {
-            loans = loanService.getLoansByStatus(status);
-        } else {
-            loans = loanService.getAllLoans();
-        }
-
+        List<UpdateLoanDto> loans = loanService.searchLoans(userId, bookId, status);
         return ResponseEntity.ok(loans);
     }
 }

@@ -1,6 +1,7 @@
 package com.example.bookmarket.service;
 
 import com.example.bookmarket.entity.LoanEntity;
+import com.example.bookmarket.enums.LoanStatus;
 import com.example.bookmarket.repository.LoanRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class LoanNotificationService {
 
         // فقط وام‌های overdue را دریافت کنید
         List<LoanEntity> overdueLoans = loanRepository
-                .findByDueDateBeforeAndStatus(today, LoanEntity.LoanStatus.ACTIVE);
+                .findByDueDateBeforeAndStatus(today, LoanStatus.ACTIVE);
 
         for (LoanEntity loan : overdueLoans) {
             sendNotification(loan, loan.getDueDate(), today);

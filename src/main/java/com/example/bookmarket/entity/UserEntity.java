@@ -1,10 +1,11 @@
 package com.example.bookmarket.entity;
 
+import com.example.bookmarket.enums.UserStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,33 +28,36 @@ public class UserEntity {
     private String nickname;
 
     @Enumerated(EnumType.STRING)
-    private UserStatus status; // اضافه کردن این خط
-
-    public enum UserStatus {
-        ACTIVE,
-        INACTIVE
-    }
+    private UserStatus status;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
-    private Set<String> roles = new HashSet<>(); // فیلد نقش‌ها
+    private Set<String> roles = new HashSet<>();
 
     public UserEntity() {
-        this.roles.add("USER"); // به طور خودکار نقش USER اضافه شود
+        this.roles.add("USER");
     }
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "register_date", updatable = false)
-    private Date registerDate;
+    private LocalDateTime registerDate;
+
+    @PostLoad
+    private void initRoles() {
+        if (this.roles == null) {
+            this.roles = new HashSet<>();
+        }
+        if (this.roles.isEmpty()) {
+            this.roles.add("USER");
+        }
+    }
 
     @PrePersist
     protected void onCreate() {
-        registerDate = new Date();
+        registerDate = LocalDateTime.now();
     }
 
     // Getters و Setters
-
     public Long getId() {
         return id;
     }
@@ -62,19 +66,19 @@ public class UserEntity {
         this.id = id;
     }
 
-    public @NotBlank(message = "UserName is mandatory") String getUsername() {
+    public String getUsername() {
         return username;
     }
 
-    public void setUsername(@NotBlank(message = "UserName is mandatory") String username) {
+    public void setUsername(String username) {
         this.username = username;
     }
 
-    public @NotNull(message = "PassWord is mandatory") String getPassword() {
+    public String getPassword() {
         return password;
     }
 
-    public void setPassword(@NotNull(message = "PassWord is mandatory") String password) {
+    public void setPassword(String password) {
         this.password = password;
     }
 
@@ -94,11 +98,11 @@ public class UserEntity {
         this.status = status;
     }
 
-    public Date getRegisterDate() {
+    public LocalDateTime getRegisterDate() {
         return registerDate;
     }
 
-    public void setRegisterDate(Date registerDate) {
+    public void setRegisterDate(LocalDateTime registerDate) {
         this.registerDate = registerDate;
     }
 

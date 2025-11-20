@@ -11,6 +11,5 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     boolean existsByUsername(String username);
 
-    // استفاده از Optional برای جلوگیری از NullPointerException
     Optional<UserEntity> findByUsername(String username);
 }

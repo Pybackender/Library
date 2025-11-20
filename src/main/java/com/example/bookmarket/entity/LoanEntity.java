@@ -1,5 +1,6 @@
 package com.example.bookmarket.entity;
 
+import com.example.bookmarket.enums.LoanStatus;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,21 +33,15 @@ public class LoanEntity {
     @Column(name = "due_date", nullable = false)
     private LocalDate dueDate;
 
-    public enum LoanStatus {
-        ACTIVE,
-        RETURNED
-    }
-
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private LoanStatus status = LoanStatus.ACTIVE;
 
     @PrePersist
     protected void onCreate() {
-        loanDate = LocalDateTime.now(); // اصلاح شده
+        loanDate = LocalDateTime.now();
     }
 
-    // Default constructor
     public LoanEntity() {
     }
 
@@ -75,11 +70,11 @@ public class LoanEntity {
         this.book = book;
     }
 
-    public LocalDateTime getLoanDate() { // اصلاح شده
+    public LocalDateTime getLoanDate() {
         return loanDate;
     }
 
-    public void setLoanDate(LocalDateTime loanDate) { // اصلاح شده
+    public void setLoanDate(LocalDateTime loanDate) {
         this.loanDate = loanDate;
     }
 

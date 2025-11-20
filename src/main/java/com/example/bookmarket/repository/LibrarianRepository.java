@@ -9,5 +9,5 @@ import java.util.Optional;
 @Repository
 public interface LibrarianRepository extends JpaRepository<LibrarianEntity, Long> {
     boolean existsByUsername(String username);
-    Optional<LibrarianEntity> findByUsername(String username); // تغییر به Optional
+    Optional<LibrarianEntity> findByUsername(String username);
 }

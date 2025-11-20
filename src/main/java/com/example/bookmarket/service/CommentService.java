@@ -10,7 +10,7 @@ import com.example.bookmarket.exception.UserNotFoundException;
 import com.example.bookmarket.repository.CommentRepository;
 import com.example.bookmarket.repository.UserRepository;
 import com.example.bookmarket.repository.BookRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,15 +18,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class CommentService {
-    @Autowired
-    private CommentRepository commentRepository;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private BookRepository bookRepository;
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
+    private final BookRepository bookRepository;
 
     @Transactional
     public CommentDto addComment(CommentDto commentDto) {

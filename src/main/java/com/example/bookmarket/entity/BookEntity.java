@@ -3,8 +3,8 @@ package com.example.bookmarket.entity;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.time.ZonedDateTime;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 @Entity
@@ -23,22 +23,20 @@ public class BookEntity {
     @Column(nullable = false)
     private BigDecimal price;
 
-    @Column(name = "numberofbooks") // Ensure the column name matches
+    @Column(name = "numberofbooks")
     private Integer numberOfBooks;
 
-    @Column(nullable = false) // فیلد برای جلد
+    @Column(nullable = false)
     private Integer volume;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "publish_date")
-    private Date publishDate;
+    private LocalDate publishDate;
 
-    @Column(nullable = false) // فیلد جدید برای ژانر
+    @Column(nullable = false)
     private String genre;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "register_date", updatable = false)
-    private ZonedDateTime registerDate;
+    private LocalDateTime registerDate;
 
     @Column(name = "discount_percentage") // فیلد جدید برای درصد تخفیف
     private Integer discountPercentage; // به درصد تخفیف به صورت عدد صحیح
@@ -48,8 +46,8 @@ public class BookEntity {
 
     @PrePersist
     protected void onCreate() {
-        registerDate = ZonedDateTime.now(ZoneId.of("Asia/Tehran")); // زمان کنونی برحسب زمان ایران
-        updateFinalPrice(); // قیمت نهایی را به‌روز کنید
+        registerDate = LocalDateTime.now(ZoneId.of("Asia/Tehran"));
+        updateFinalPrice();
     }
 
     @PreUpdate
@@ -109,11 +107,11 @@ public class BookEntity {
         this.price = price;
     }
 
-    public Date getPublishDate() {
+    public LocalDate getPublishDate() {
         return publishDate;
     }
 
-    public void setPublishDate(Date publishDate) {
+    public void setPublishDate(LocalDate publishDate) {
         this.publishDate = publishDate;
     }
 
@@ -125,11 +123,11 @@ public class BookEntity {
         this.numberOfBooks = numberOfBooks;
     }
 
-    public ZonedDateTime getRegisterDate() {
+    public LocalDateTime getRegisterDate() {
         return registerDate;
     }
 
-    public void setRegisterDate(ZonedDateTime registerDate) {
+    public void setRegisterDate(LocalDateTime registerDate) {
         this.registerDate = registerDate;
     }
 

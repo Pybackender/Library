@@ -5,29 +5,27 @@ import com.example.bookmarket.dto.UpdateLoanDto;
 import com.example.bookmarket.entity.BookEntity;
 import com.example.bookmarket.entity.LoanEntity;
 import com.example.bookmarket.entity.UserEntity;
+import com.example.bookmarket.enums.LoanStatus;
+import com.example.bookmarket.enums.UserStatus;
 import com.example.bookmarket.exception.*;
 import com.example.bookmarket.repository.LoanRepository;
 import com.example.bookmarket.repository.UserRepository;
 import com.example.bookmarket.repository.BookRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class LoanService {
-    @Autowired
+
     private LoanRepository loanRepository;
-
-    @Autowired
     private UserRepository userRepository;
-
-    @Autowired
     private BookRepository bookRepository;
 
     public LoanService(LoanRepository loanRepository, UserRepository userRepository, BookRepository bookRepository) {
@@ -41,7 +39,7 @@ public class LoanService {
         UserEntity user = userRepository.findById(loanDto.userId())
                 .orElseThrow(() -> new UserNotFoundException(loanDto.userId()));
 
-        if (user.getStatus() == UserEntity.UserStatus.INACTIVE) {
+        if (user.getStatus() == UserStatus.INACTIVE) { // تغییر به UserStatus
             throw new UserInactiveException(loanDto.userId());
         }
 
@@ -94,7 +92,7 @@ public class LoanService {
         UserEntity user = userRepository.findById(updateLoanDto.userId())
                 .orElseThrow(() -> new UserNotFoundException(updateLoanDto.userId()));
 
-        if (user.getStatus() == UserEntity.UserStatus.INACTIVE) {
+        if (user.getStatus() == UserStatus.INACTIVE) { // تغییر به UserStatus
             throw new UserInactiveException(updateLoanDto.userId());
         }
 
@@ -121,7 +119,7 @@ public class LoanService {
         LoanEntity loan = loanRepository.findById(id)
                 .orElseThrow(() -> new LoanNotFoundException(id));
 
-        if (loan.getStatus() == LoanEntity.LoanStatus.ACTIVE) {
+        if (loan.getStatus() == LoanStatus.ACTIVE) { // تغییر به LoanStatus
             BookEntity book = loan.getBook();
             Integer currentStock = book.getNumberOfBooks();
             book.setNumberOfBooks(currentStock + 1);
@@ -154,7 +152,7 @@ public class LoanService {
         LoanEntity loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new LoanNotFoundException(loanId));
 
-        if (loan.getStatus() == LoanEntity.LoanStatus.RETURNED) {
+        if (loan.getStatus() == LoanStatus.RETURNED) { // تغییر به LoanStatus
             throw new BookAlreadyReturnedException();
         }
 
@@ -163,27 +161,27 @@ public class LoanService {
         book.setNumberOfBooks(currentStock + 1);
         bookRepository.save(book);
 
-        loan.setStatus(LoanEntity.LoanStatus.RETURNED);
+        loan.setStatus(LoanStatus.RETURNED); // تغییر به LoanStatus
         loanRepository.save(loan);
     }
 
-    public long countLoansByStatus(LoanEntity.LoanStatus status) {
+    public long countLoansByStatus(LoanStatus status) { // تغییر به LoanStatus
         return loanRepository.countByStatus(status);
     }
 
     public long countActiveLoans() {
-        return countLoansByStatus(LoanEntity.LoanStatus.ACTIVE);
+        return countLoansByStatus(LoanStatus.ACTIVE); // تغییر به LoanStatus
     }
 
     public long countReturnedLoans() {
-        return countLoansByStatus(LoanEntity.LoanStatus.RETURNED);
+        return countLoansByStatus(LoanStatus.RETURNED); // تغییر به LoanStatus
     }
 
     public long countTotalLoans() {
         return countActiveLoans() + countReturnedLoans();
     }
 
-    public List<UpdateLoanDto> getLoansByStatus(LoanEntity.LoanStatus status) {
+    public List<UpdateLoanDto> getLoansByStatus(LoanStatus status) { // تغییر به LoanStatus
         return loanRepository.findByStatus(status).stream()
                 .map(this::convertToUpdateLoanDto)
                 .collect(Collectors.toList());
@@ -192,7 +190,7 @@ public class LoanService {
     public long countActiveLoansByUserId(Long userId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        return loanRepository.countByUserAndStatus(user, LoanEntity.LoanStatus.ACTIVE);
+        return loanRepository.countByUserAndStatus(user, LoanStatus.ACTIVE); // تغییر به LoanStatus
     }
 
     // متدهای تبدیل Entity به DTO
@@ -211,5 +209,24 @@ public class LoanService {
                 loan.getBook().getId(),
                 loan.getDueDate()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<UpdateLoanDto> searchLoans(Long userId, Long bookId, LoanStatus status) { // تغییر به LoanStatus
+        if (userId != null) {
+            // بررسی وجود کاربر
+            UserEntity user = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException(userId));
+            return getLoansByUserId(userId);
+        } else if (bookId != null) {
+            // بررسی وجود کتاب
+            BookEntity book = bookRepository.findById(bookId)
+                    .orElseThrow(() -> new BookNotFoundException(bookId));
+            return getLoansByBookId(bookId);
+        } else if (status != null) {
+            return getLoansByStatus(status);
+        } else {
+            return getAllLoans();
+        }
     }
 }

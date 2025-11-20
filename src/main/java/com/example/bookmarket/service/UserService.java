@@ -5,11 +5,11 @@ import com.example.bookmarket.dto.AddUserDto;
 import com.example.bookmarket.dto.TokenDto;
 import com.example.bookmarket.dto.UpdateUserDto;
 import com.example.bookmarket.entity.UserEntity;
-import com.example.bookmarket.exception.UserAlreadyLoggedInException;
-import com.example.bookmarket.exception.UserAlreadyLoggedOutException;
-import com.example.bookmarket.exception.UserNotFoundException;
-import com.example.bookmarket.exception.UsernameAlreadyExistsException;
+import com.example.bookmarket.enums.UserStatus;
+import com.example.bookmarket.exception.*;
 import com.example.bookmarket.repository.UserRepository;
+import io.jsonwebtoken.ExpiredJwtException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,8 +19,10 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
+@Slf4j
 @Service
 public class UserService {
+
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
@@ -42,7 +44,9 @@ public class UserService {
         userEntity.setUsername(addUserDto.username());
         userEntity.setPassword(passwordEncoder.encode(addUserDto.password()));
         userEntity.setNickname(addUserDto.nickname());
-        userEntity.setStatus(UserEntity.UserStatus.INACTIVE);
+        userEntity.setStatus(UserStatus.INACTIVE); // تغییر به UserStatus
+
+        userEntity.getRoles().add("USER");
 
         UserEntity savedUser = userRepository.save(userEntity);
         return convertToAddUserDto(savedUser);
@@ -56,21 +60,21 @@ public class UserService {
             throw new IllegalArgumentException("رمزعبور اشتباه است");
         }
 
-        if (userEntity.getStatus() == UserEntity.UserStatus.ACTIVE) {
+        if (userEntity.getStatus() == UserStatus.ACTIVE) { // تغییر به UserStatus
             throw new UserAlreadyLoggedInException(username);
         }
 
-        if (userEntity.getStatus() == UserEntity.UserStatus.INACTIVE) {
-            userEntity.setStatus(UserEntity.UserStatus.ACTIVE);
+        if (userEntity.getStatus() == UserStatus.INACTIVE) { // تغییر به UserStatus
+            userEntity.setStatus(UserStatus.ACTIVE); // تغییر به UserStatus
             userRepository.save(userEntity);
         }
 
-        Set<String> roles = Collections.singleton("USER");
+        Set<String> roles = getUserRoles(username);
 
         String accessToken = jwtUtil.generateToken(username, roles);
         String refreshToken = jwtUtil.generateRefreshToken(username);
 
-        return new TokenDto(accessToken, refreshToken);
+        return new TokenDto(accessToken, refreshToken, "Login successful");
     }
 
     @Transactional
@@ -89,7 +93,7 @@ public class UserService {
             userEntity.setNickname(updateUserDto.nickname());
         }
 
-        userEntity.setStatus(UserEntity.UserStatus.ACTIVE);
+        userEntity.setStatus(UserStatus.ACTIVE); // تغییر به UserStatus
         UserEntity updatedUser = userRepository.save(userEntity);
         return convertToUpdateUserDto(updatedUser);
     }
@@ -107,21 +111,68 @@ public class UserService {
         UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
-        if (userEntity.getStatus() == UserEntity.UserStatus.INACTIVE) {
+        if (userEntity.getStatus() == UserStatus.INACTIVE) { // تغییر به UserStatus
             throw new UserAlreadyLoggedOutException(userEntity.getUsername());
         }
 
-        userEntity.setStatus(UserEntity.UserStatus.INACTIVE);
+        userEntity.setStatus(UserStatus.INACTIVE); // تغییر به UserStatus
         userRepository.save(userEntity);
+    }
+
+    @Transactional
+    public TokenDto refreshToken(String refreshToken) {
+        log.info("Attempting to refresh token");
+
+        try {
+            String username = jwtUtil.extractUsername(refreshToken);
+
+            if (!jwtUtil.isRefreshToken(refreshToken)) {
+                log.warn("Invalid token type used for refresh: {}", refreshToken);
+                throw new InvalidTokenException("Invalid token type. Refresh token required.");
+            }
+
+            if (!jwtUtil.validateToken(refreshToken, username)) {
+                log.warn("Refresh token validation failed for user: {}", username);
+                throw new InvalidTokenException("Refresh token is invalid or expired");
+            }
+
+            // بررسی وجود کاربر در سیستم
+            UserEntity user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new UserNotFoundException(username));
+
+            // بررسی وضعیت کاربر
+            if (user.getStatus() != UserStatus.ACTIVE) { // تغییر به UserStatus
+                throw new UserInactiveException("User account is not active");
+            }
+
+            Set<String> roles = getUserRoles(username);
+            log.debug("Roles for user {}: {}", username, roles);
+
+            String newAccessToken = jwtUtil.generateToken(username, roles);
+
+            log.info("Token refreshed successfully for user: {}", username);
+
+            return new TokenDto(newAccessToken, refreshToken, "Access token refreshed successfully");
+
+        } catch (ExpiredJwtException ex) {
+            log.warn("Refresh token expired: {}", ex.getMessage());
+            throw new TokenExpiredException("Refresh token is expired");
+        } catch (UserNotFoundException | UserInactiveException ex) {
+            log.warn("User issue during token refresh: {}", ex.getMessage());
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Unexpected error during token refresh: {}", ex.getMessage());
+            throw new InvalidTokenException("Refresh token is invalid");
+        }
     }
 
     public Set<String> getUserRoles(String username) {
         Optional<UserEntity> userOptional = userRepository.findByUsername(username);
         if (userOptional.isPresent()) {
             UserEntity user = userOptional.get();
-            return user.getRoles();
+            return user.getRoles() != null ? user.getRoles() : Collections.singleton("USER");
         }
-        return Collections.emptySet();
+        return Collections.singleton("USER");
     }
 
     public UserEntity findByUsername(String username) {
