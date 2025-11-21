@@ -26,7 +26,6 @@ public class StatisticsService {
         long activeLoans = loanRepository.countByStatus(LoanStatus.ACTIVE);
         long returnedLoans = loanRepository.countByStatus(LoanStatus.RETURNED);
 
-        // ایجاد یک شیء جدید از StatisticsDto
         return new StatisticsDto(totalBooks, totalUsers, totalLoans, activeLoans, returnedLoans);
     }
 }

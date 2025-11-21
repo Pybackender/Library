@@ -115,11 +115,11 @@ public class LibrarianService {
                 throw new InvalidTokenException("Refresh token is invalid or expired");
             }
 
-            // بررسی وجود کتابدار در سیستم
+
             LibrarianEntity librarian = librarianRepository.findByUsername(username)
                     .orElseThrow(() -> new UserNotFoundException(username));
 
-            // بررسی وضعیت کتابدار
+
             if (librarian.getStatus() != LibrarianStatus.ACTIVE) { // تغییر به LibrarianStatus
                 throw new UserInactiveException("Librarian account is not active");
             }
@@ -139,18 +139,16 @@ public class LibrarianService {
     public Set<String> getLibrarianRoles(String username) {
         Optional<LibrarianEntity> librarian = librarianRepository.findByUsername(username);
         if (librarian.isPresent()) {
-            // اگر در Entity نقش‌ها را دارید، از آن استفاده کنید
-            // return librarian.get().getRoles();
+
             return Collections.singleton("ADMIN");
         }
         return Collections.emptySet();
     }
 
-    // متدهای تبدیل Entity به DTO
     private AddLibrarianDto convertToAddLibrarianDto(LibrarianEntity librarian) {
         return new AddLibrarianDto(
                 librarian.getUsername(),
-                "" // پسورد رو برنمی‌گردونیم برای امنیت
+                ""
         );
     }
 
@@ -158,7 +156,7 @@ public class LibrarianService {
         return new UpdateLibrarianDto(
                 librarian.getId(),
                 librarian.getUsername(),
-                "" // پسورد رو برنمی‌گردونیم برای امنیت
+                ""
         );
     }
 

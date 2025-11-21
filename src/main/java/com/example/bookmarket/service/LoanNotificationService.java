@@ -37,6 +37,5 @@ public class LoanNotificationService {
                 ", Book: " + loan.getBook().getTitle() +
                 ", Overdue by: " + daysOverdue + " days");
 
-        // در اینجا می‌توانید ایمیل، پیامک یا نوتیفیکیشن واقعی ارسال کنید
     }
 }

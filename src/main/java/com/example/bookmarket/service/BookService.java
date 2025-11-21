@@ -106,7 +106,6 @@ public class BookService {
                 .collect(Collectors.toList());
     }
 
-    // متدهای کمکی برای تبدیل Entity به DTO
     private AddBookDto convertToAddBookDto(BookEntity book) {
         return new AddBookDto(
                 book.getTitle(),
@@ -134,7 +133,6 @@ public class BookService {
         );
     }
 
-    // متدهای جستجوی قدیمی (اگر لازم هست)
     public List<UpdateBookDto> searchByTitle(String title) {
         return bookRepository.findByTitleContainingIgnoreCase(title).stream()
                 .map(this::convertToUpdateBookDto)

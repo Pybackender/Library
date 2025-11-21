@@ -39,7 +39,7 @@ public class LoanService {
         UserEntity user = userRepository.findById(loanDto.userId())
                 .orElseThrow(() -> new UserNotFoundException(loanDto.userId()));
 
-        if (user.getStatus() == UserStatus.INACTIVE) { // تغییر به UserStatus
+        if (user.getStatus() == UserStatus.INACTIVE) {
             throw new UserInactiveException(loanDto.userId());
         }
 
@@ -92,7 +92,7 @@ public class LoanService {
         UserEntity user = userRepository.findById(updateLoanDto.userId())
                 .orElseThrow(() -> new UserNotFoundException(updateLoanDto.userId()));
 
-        if (user.getStatus() == UserStatus.INACTIVE) { // تغییر به UserStatus
+        if (user.getStatus() == UserStatus.INACTIVE) {
             throw new UserInactiveException(updateLoanDto.userId());
         }
 
@@ -119,7 +119,7 @@ public class LoanService {
         LoanEntity loan = loanRepository.findById(id)
                 .orElseThrow(() -> new LoanNotFoundException(id));
 
-        if (loan.getStatus() == LoanStatus.ACTIVE) { // تغییر به LoanStatus
+        if (loan.getStatus() == LoanStatus.ACTIVE) {
             BookEntity book = loan.getBook();
             Integer currentStock = book.getNumberOfBooks();
             book.setNumberOfBooks(currentStock + 1);
@@ -152,7 +152,7 @@ public class LoanService {
         LoanEntity loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new LoanNotFoundException(loanId));
 
-        if (loan.getStatus() == LoanStatus.RETURNED) { // تغییر به LoanStatus
+        if (loan.getStatus() == LoanStatus.RETURNED) {
             throw new BookAlreadyReturnedException();
         }
 
@@ -161,7 +161,7 @@ public class LoanService {
         book.setNumberOfBooks(currentStock + 1);
         bookRepository.save(book);
 
-        loan.setStatus(LoanStatus.RETURNED); // تغییر به LoanStatus
+        loan.setStatus(LoanStatus.RETURNED);
         loanRepository.save(loan);
     }
 
@@ -170,18 +170,18 @@ public class LoanService {
     }
 
     public long countActiveLoans() {
-        return countLoansByStatus(LoanStatus.ACTIVE); // تغییر به LoanStatus
+        return countLoansByStatus(LoanStatus.ACTIVE);
     }
 
     public long countReturnedLoans() {
-        return countLoansByStatus(LoanStatus.RETURNED); // تغییر به LoanStatus
+        return countLoansByStatus(LoanStatus.RETURNED);
     }
 
     public long countTotalLoans() {
         return countActiveLoans() + countReturnedLoans();
     }
 
-    public List<UpdateLoanDto> getLoansByStatus(LoanStatus status) { // تغییر به LoanStatus
+    public List<UpdateLoanDto> getLoansByStatus(LoanStatus status) {
         return loanRepository.findByStatus(status).stream()
                 .map(this::convertToUpdateLoanDto)
                 .collect(Collectors.toList());
@@ -190,10 +190,9 @@ public class LoanService {
     public long countActiveLoansByUserId(Long userId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-        return loanRepository.countByUserAndStatus(user, LoanStatus.ACTIVE); // تغییر به LoanStatus
+        return loanRepository.countByUserAndStatus(user, LoanStatus.ACTIVE);
     }
 
-    // متدهای تبدیل Entity به DTO
     private LoanDto convertToLoanDto(LoanEntity loan) {
         return new LoanDto(
                 loan.getUser().getId(),
@@ -212,14 +211,14 @@ public class LoanService {
     }
 
     @Transactional(readOnly = true)
-    public List<UpdateLoanDto> searchLoans(Long userId, Long bookId, LoanStatus status) { // تغییر به LoanStatus
+    public List<UpdateLoanDto> searchLoans(Long userId, Long bookId, LoanStatus status) {
         if (userId != null) {
             // بررسی وجود کاربر
             UserEntity user = userRepository.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException(userId));
             return getLoansByUserId(userId);
         } else if (bookId != null) {
-            // بررسی وجود کتاب
+
             BookEntity book = bookRepository.findById(bookId)
                     .orElseThrow(() -> new BookNotFoundException(bookId));
             return getLoansByBookId(bookId);

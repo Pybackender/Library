@@ -28,12 +28,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // ابتدا در librarian جستجو کنید
+
         Optional<LibrarianEntity> librarian = librarianRepository.findByUsername(username);
         if (librarian.isPresent()) {
             LibrarianEntity lib = librarian.get();
 
-            // خواندن نقش‌ها از جدول librarian_roles
             List<GrantedAuthority> authorities = lib.getRoles().stream()
                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                     .collect(Collectors.toList());
@@ -41,16 +40,14 @@ public class CustomUserDetailsService implements UserDetailsService {
             return new org.springframework.security.core.userdetails.User(
                     lib.getUsername(),
                     lib.getPassword(),
-                    authorities // نقش‌های واقعی از دیتابیس
+                    authorities
             );
         }
 
-        // اگر librarian نبود، در user جستجو کنید
         Optional<UserEntity> user = userRepository.findByUsername(username);
         if (user.isPresent()) {
             UserEntity userEntity = user.get();
 
-            // خواندن نقش‌ها از جدول user_roles
             List<GrantedAuthority> authorities = userEntity.getRoles().stream()
                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                     .collect(Collectors.toList());

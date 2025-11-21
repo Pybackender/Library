@@ -44,7 +44,7 @@ public class UserService {
         userEntity.setUsername(addUserDto.username());
         userEntity.setPassword(passwordEncoder.encode(addUserDto.password()));
         userEntity.setNickname(addUserDto.nickname());
-        userEntity.setStatus(UserStatus.INACTIVE); // تغییر به UserStatus
+        userEntity.setStatus(UserStatus.INACTIVE);
 
         userEntity.getRoles().add("USER");
 
@@ -60,12 +60,12 @@ public class UserService {
             throw new IllegalArgumentException("رمزعبور اشتباه است");
         }
 
-        if (userEntity.getStatus() == UserStatus.ACTIVE) { // تغییر به UserStatus
+        if (userEntity.getStatus() == UserStatus.ACTIVE) {
             throw new UserAlreadyLoggedInException(username);
         }
 
-        if (userEntity.getStatus() == UserStatus.INACTIVE) { // تغییر به UserStatus
-            userEntity.setStatus(UserStatus.ACTIVE); // تغییر به UserStatus
+        if (userEntity.getStatus() == UserStatus.INACTIVE) {
+            userEntity.setStatus(UserStatus.ACTIVE);
             userRepository.save(userEntity);
         }
 
@@ -93,7 +93,7 @@ public class UserService {
             userEntity.setNickname(updateUserDto.nickname());
         }
 
-        userEntity.setStatus(UserStatus.ACTIVE); // تغییر به UserStatus
+        userEntity.setStatus(UserStatus.ACTIVE);
         UserEntity updatedUser = userRepository.save(userEntity);
         return convertToUpdateUserDto(updatedUser);
     }
@@ -111,11 +111,11 @@ public class UserService {
         UserEntity userEntity = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
-        if (userEntity.getStatus() == UserStatus.INACTIVE) { // تغییر به UserStatus
+        if (userEntity.getStatus() == UserStatus.INACTIVE) {
             throw new UserAlreadyLoggedOutException(userEntity.getUsername());
         }
 
-        userEntity.setStatus(UserStatus.INACTIVE); // تغییر به UserStatus
+        userEntity.setStatus(UserStatus.INACTIVE);
         userRepository.save(userEntity);
     }
 
@@ -136,11 +136,9 @@ public class UserService {
                 throw new InvalidTokenException("Refresh token is invalid or expired");
             }
 
-            // بررسی وجود کاربر در سیستم
             UserEntity user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new UserNotFoundException(username));
 
-            // بررسی وضعیت کاربر
             if (user.getStatus() != UserStatus.ACTIVE) { // تغییر به UserStatus
                 throw new UserInactiveException("User account is not active");
             }
@@ -180,11 +178,10 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException(username));
     }
 
-    // متدهای تبدیل Entity به DTO
     private AddUserDto convertToAddUserDto(UserEntity user) {
         return new AddUserDto(
                 user.getUsername(),
-                "", // پسورد رو برنمی‌گردونیم برای امنیت
+                "",
                 user.getNickname()
         );
     }

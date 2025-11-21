@@ -57,7 +57,6 @@ public class CommentService {
         commentRepository.deleteById(commentId);
     }
 
-    // متد تبدیل Entity به DTO
     private CommentDto convertToDto(CommentEntity comment) {
         return new CommentDto(
                 comment.getUser().getId(),
