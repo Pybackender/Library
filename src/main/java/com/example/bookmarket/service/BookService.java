@@ -7,7 +7,7 @@ import com.example.bookmarket.exception.BookNotFoundException;
 import com.example.bookmarket.repository.BookRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.math.RoundingMode;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +19,19 @@ public class BookService {
 
     public BookService(BookRepository bookRepository) {
         this.bookRepository = bookRepository;
+    }
+
+    private BigDecimal calculateFinalPrice(BigDecimal price, Integer discountPercentage) {
+        if (discountPercentage != null && discountPercentage > 0) {
+            // اعتبارسنجی برای تخفیف معقول
+            if (discountPercentage > 100) {
+                throw new IllegalArgumentException("Discount percentage cannot be more than 100%");
+            }
+            BigDecimal discountAmount = price.multiply(BigDecimal.valueOf(discountPercentage))
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            return price.subtract(discountAmount);
+        }
+        return price;
     }
 
     @Transactional
@@ -36,6 +49,11 @@ public class BookService {
         bookEntity.setGenre(addBookDto.genre());
         bookEntity.setVolume(addBookDto.volume());
         bookEntity.setDiscountPercentage(addBookDto.discountPercentage());
+
+        BigDecimal finalPrice = calculateFinalPrice(addBookDto.price(), addBookDto.discountPercentage());
+
+        bookEntity.setFinalPrice(finalPrice);
+
 
         BookEntity savedBook = bookRepository.save(bookEntity);
         return convertToAddBookDto(savedBook);
@@ -60,6 +78,10 @@ public class BookService {
         bookEntity.setGenre(updateBookDto.genre());
         bookEntity.setVolume(updateBookDto.volume());
         bookEntity.setDiscountPercentage(updateBookDto.discountPercentage());
+
+        BigDecimal finalPrice = calculateFinalPrice(updateBookDto.price(), updateBookDto.discountPercentage());
+        bookEntity.setFinalPrice(finalPrice);
+
 
         BookEntity updatedBook = bookRepository.save(bookEntity);
         return convertToUpdateBookDto(updatedBook);
